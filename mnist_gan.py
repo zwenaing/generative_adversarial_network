@@ -6,22 +6,25 @@ import matplotlib.pyplot as plt
 
 
 from tensorflow.examples.tutorials.mnist import input_data
+
 mnist = input_data.read_data_sets('/tmp/data', one_hot=True)
 
-num_steps = 10000
-batch_size = 128
-learning_rate = 0.0002
+num_steps = 10000   # number of training steps 
+batch_size = 128    # batch size
+learning_rate = 0.0002  # learning rate
 display_steps = 1000
 
-image_dim = 784
-gen_hidden_dim = 256
-disc_hidden_dim = 256
-noise_dim = 100
+image_dim = 784     # dimension of image
+gen_hidden_dim = 256    # hidden layer of generator network
+disc_hidden_dim = 256   # hidden layer of discriminator network
+noise_dim = 100    
 model_path = "tmp/model.ckpt"
 
+# Xavier initialization
 def glorot_init(shape):
     return tf.random_normal(shape, stddev=1./tf.sqrt(shape[0] / 2.))
 
+# weights initialization
 weights = {
     "gen_hidden": tf.Variable(glorot_init([noise_dim, gen_hidden_dim])),
     "gen_out": tf.Variable(glorot_init([gen_hidden_dim, image_dim])),
@@ -29,6 +32,7 @@ weights = {
     "disc_out": tf.Variable(glorot_init([disc_hidden_dim, 1]))
 }
 
+# biases initialization
 biases = {
     "gen_hidden": tf.Variable(tf.zeros([gen_hidden_dim])),
     "gen_out": tf.Variable(tf.zeros([image_dim])),
@@ -36,27 +40,34 @@ biases = {
     "disc_out": tf.Variable(tf.zeros([1]))
 }
 
+# Generator network
 def generator(x):
     layer1 = tf.nn.relu(tf.add(tf.matmul(x, weights['gen_hidden']), biases['gen_hidden']))
     layer2 = tf.nn.sigmoid(tf.add(tf.matmul(layer1, weights['gen_out']), biases['gen_out']))
     return layer2
 
+# Discriminator Network
 def discriminator(x):
     layer1 = tf.nn.relu(tf.add(tf.matmul(x, weights['disc_hidden']), biases['disc_hidden']))
     layer2 = tf.nn.sigmoid(tf.add(tf.matmul(layer1, weights['disc_out']), biases['disc_out']))
     return layer2
 
+# Input
 disc_input = tf.placeholder(tf.float32, [None, image_dim])
 gen_input = tf.placeholder(tf.float32, [None, noise_dim])
 
+# Sample data for Generator network
 gen_sample = generator(gen_input)
 
+# Real data for Discriminator
 disc_real = discriminator(disc_input)
 disc_fake = discriminator(gen_sample)
 
+# Loss of Generator and Discriminator networks
 gen_loss = - tf.reduce_mean(tf.log(disc_fake))
 disc_loss = - tf.reduce_mean(tf.log(disc_real) + tf.log(1. - disc_fake))
 
+# Optimization
 gen_optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
 disc_optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
 
@@ -70,6 +81,7 @@ init = tf.global_variables_initializer()
 
 saver = tf.train.Saver()
 
+# training
 with tf.Session() as sess:
     sess.run(init)
 
